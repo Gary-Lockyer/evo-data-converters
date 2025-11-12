@@ -10,13 +10,21 @@
 #  limitations under the License.
 
 import os
+import sys
 
 import pytest
+
+from pathlib import Path
 
 from evo.data_converters.common import (
     create_evo_object_service_and_data_client,
     EvoWorkspaceMetadata,
 )
+
+
+def pytest_ignore_collect(collection_path: Path, config) -> bool:
+    # All the tests in this package require Windows to work, so skip collection otherwise
+    return not sys.platform.startswith("win")
 
 
 @pytest.fixture(scope="session")
@@ -26,6 +34,18 @@ def evo_metadata(tmp_path_factory):
         workspace_id="9c86938d-a40f-491a-a3e2-e823ca53c9ae",
         cache_root=cache_root_dir.name,
     )
+
+
+class TestDataClient:
+    def __init__(self, data_client):
+        self.data_client = data_client
+
+    def __getattr__(self, name):
+        return getattr(self.data_client, name)
+
+    def load_table(self, table):
+        chunks_parquet_file = os.path.join(str(self.data_client.cache_location), table.data)
+        return pq.read_table(chunks_parquet_file)
 
 
 @pytest.fixture(scope="session")
