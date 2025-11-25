@@ -11,7 +11,7 @@
 
 import os
 import sys
-
+import pq
 import pytest
 
 from pathlib import Path
